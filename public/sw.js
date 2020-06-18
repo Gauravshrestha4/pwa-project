@@ -1,7 +1,7 @@
 importScripts('/src/js/idb.js')
 importScripts('/src/js/utility.js');
 
-var CACHE_STATIC_NAME = 'static-v17'
+var CACHE_STATIC_NAME = 'static-v18'
 var CACHE_DYNAMIC_NAME = 'dynamic-2'
 var STATIC_FILES=['/',
 '/index.html',
@@ -103,6 +103,43 @@ self.addEventListener('fetch', function (event) {
       );
   }
 });
+
+self.addEventListener('sync', event => {
+  console.log('background syncing')
+  if (event.tag == 'sync-new-posts') {
+    console.log('syncing new posts');
+    event.waitUntil(
+      readAllData('sync-posts').
+        then(function(data){
+          for (var dt of data) {
+            fetch('https://pwa-101-bdd28.firebaseio.com/posts.json', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept':'application/json'
+              },
+              body: JSON.stringify({
+                id:dt.id,
+                title: dt.title,
+                location: dt.location,
+                image:'asdfdfs'
+              })
+            })
+              .then(res => {
+                console.log('data send', res)
+                if (res.ok) {
+                  deleteItemFromData('sync-posts',dt.id)
+                }
+              }).
+              catch(err => {
+              console.log(err)
+            })
+          }
+        }
+      )
+    )
+  }
+})
 // self.addEventListener('fetch', function(event) {
 //   event.respondWith(
 //     caches.match(event.request)
